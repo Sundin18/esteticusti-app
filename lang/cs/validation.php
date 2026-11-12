@@ -158,4 +158,8 @@ return [
     'uppercase' => ':Attribute musí být velká písmena.',
     'url' => 'Formát :attribute je neplatný.',
     'uuid' => ':Attribute musí být validní UUID.',
+    'attributes' => [
+        'firstname' => 'jméno',
+        'lastname' => 'příjmení',
+    ],
 ];

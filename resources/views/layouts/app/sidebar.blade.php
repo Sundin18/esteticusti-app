@@ -1,3 +1,4 @@
+@inject('navigation', 'App\Core\Navigation\NavigationRegistry')
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
     <head>
@@ -11,11 +12,15 @@
             </flux:sidebar.header>
 
             <flux:sidebar.nav>
-                <flux:sidebar.group :heading="__('Platform')" class="grid">
-                    <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
-                        {{ __('Dashboard') }}
-                    </flux:sidebar.item>
-                </flux:sidebar.group>
+                @foreach ($navigation->visibleTo(auth()->user()) as $group => $items)
+                    <flux:sidebar.group :heading="__($group)" class="grid">
+                        @foreach ($items as $item)
+                            <flux:sidebar.item :icon="$item->icon" :href="$item->url()" :current="$item->isCurrent()" wire:navigate>
+                                {{ __($item->label) }}
+                            </flux:sidebar.item>
+                        @endforeach
+                    </flux:sidebar.group>
+                @endforeach
             </flux:sidebar.nav>
 
             <flux:spacer />

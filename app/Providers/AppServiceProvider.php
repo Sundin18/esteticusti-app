@@ -2,9 +2,14 @@
 
 namespace App\Providers;
 
+use App\Core\Authorization\UserRole;
+use App\Core\Navigation\NavigationItem;
+use App\Core\Navigation\NavigationRegistry;
+use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -21,9 +26,38 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
+    public function boot(NavigationRegistry $navigation): void
     {
         $this->configureDefaults();
+        $this->defineGates();
+        $this->registerNavigation($navigation);
+    }
+
+    /**
+     * Define the application's own abilities; modules define theirs in their providers.
+     */
+    protected function defineGates(): void
+    {
+        Gate::define('users.create', fn (User $user): bool => $user->hasRole(UserRole::Spravce));
+    }
+
+    /**
+     * Register the application's own sidebar items; modules add theirs in their providers.
+     */
+    protected function registerNavigation(NavigationRegistry $navigation): void
+    {
+        $navigation->add('Platform', new NavigationItem(
+            label: 'Dashboard',
+            route: 'dashboard',
+            icon: 'home',
+        ));
+
+        $navigation->add('Platform', new NavigationItem(
+            label: 'New user',
+            route: 'register',
+            icon: 'user-plus',
+            ability: 'users.create',
+        ));
     }
 
     /**
