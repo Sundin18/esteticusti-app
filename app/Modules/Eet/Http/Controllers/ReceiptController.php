@@ -4,7 +4,6 @@ namespace App\Modules\Eet\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Eet\Enums\SaleStatus;
-use App\Modules\Eet\Models\Settings;
 use App\Modules\Eet\Models\Sale;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,15 +17,14 @@ class ReceiptController extends Controller
 
     /**
      * Vykreslí účtenku jako PDF pro tisk; nic se neukládá. Zamítnutá tržba účtenku nemá.
+     * Hlavička účtenky vychází z údajů uložených u tržby, ne z aktuálního nastavení.
      */
     public function __invoke(Sale $sale): Response
     {
         abort_if($sale->status === SaleStatus::Rejected, 404);
 
-        $settings = Settings::current() ?? abort(404);
-
         return Pdf::setOption('isFontSubsettingEnabled', true)
-            ->loadView('eet::receipt', ['sale' => $sale, 'settings' => $settings])
+            ->loadView('eet::receipt', ['sale' => $sale])
             ->setPaper(self::RECEIPT_SIZE)
             ->stream("uctenka-{$sale->id}.pdf");
     }

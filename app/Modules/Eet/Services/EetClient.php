@@ -5,7 +5,7 @@ namespace App\Modules\Eet\Services;
 interface EetClient
 {
     /**
-     * Odešle tržbu službě EET s nastavením modulu a aktivním certifikátem.
+     * Odešle tržbu službě EET do nastaveného prostředí, podepsanou aktivním certifikátem.
      *
      * @param  bool  $firstAttempt  False, když se stejná tržba posílá znovu.
      * @param  bool  $verifyOnly  True odešle zprávu v ověřovacím režimu: zkontroluje se, ale neeviduje a POK se nevydá.

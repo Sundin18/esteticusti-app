@@ -5,8 +5,9 @@ namespace App\Modules\Eet\Models;
 use App\Models\Customer;
 use App\Models\User;
 use App\Modules\Eet\database\factories\SaleFactory;
-use App\Modules\Eet\Enums\SaleStatus;
 use App\Modules\Eet\Enums\PaymentMethod;
+use App\Modules\Eet\Enums\SaleStatus;
+use App\Modules\Eet\Services\SaleData;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
@@ -20,6 +21,11 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property string $receipt_number
+ * @property string $taxpayer_eic EIČ poplatníka v okamžiku tržby.
+ * @property string $premises_name
+ * @property string $premises_address
+ * @property int $unit_id
+ * @property string $register_id
  * @property Carbon $sold_at
  * @property string $total_amount Částka v Kč na dvě desetinná místa.
  * @property PaymentMethod $payment_method
@@ -36,7 +42,7 @@ use Illuminate\Support\Carbon;
  */
 #[Table('eet_sales')]
 #[UseFactory(SaleFactory::class)]
-#[Fillable(['receipt_number', 'sold_at', 'total_amount', 'payment_method', 'status', 'pok', 'is_test', 'user_id', 'customer_id'])]
+#[Fillable(['receipt_number', 'taxpayer_eic', 'premises_name', 'premises_address', 'unit_id', 'register_id', 'sold_at', 'total_amount', 'payment_method', 'status', 'pok', 'is_test', 'user_id', 'customer_id'])]
 class Sale extends Model
 {
     /** @use HasFactory<SaleFactory> */
@@ -60,6 +66,7 @@ class Sale extends Model
     protected function casts(): array
     {
         return [
+            'unit_id' => 'integer',
             'sold_at' => 'datetime',
             'total_amount' => 'decimal:2',
             'payment_method' => PaymentMethod::class,
@@ -119,6 +126,21 @@ class Sale extends Model
     public function formattedAmount(): string
     {
         return self::formatAmount($this->total_amount);
+    }
+
+    /**
+     * Vrátí údaje tržby tak, jak se posílají službě EET, včetně poplatníka platného při jejím vzniku.
+     */
+    public function toSaleData(): SaleData
+    {
+        return new SaleData(
+            taxpayerEic: $this->taxpayer_eic,
+            unitId: $this->unit_id,
+            registerId: $this->register_id,
+            receiptNumber: $this->receipt_number,
+            soldAt: $this->sold_at,
+            totalAmount: $this->total_amount,
+        );
     }
 
     public function isConfirmed(): bool

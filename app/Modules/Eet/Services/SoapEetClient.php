@@ -15,13 +15,16 @@ use Illuminate\Support\Str;
  */
 class SoapEetClient implements EetClient
 {
+    /**
+     * Poplatníka, jednotku a pokladnu bere z tržby; z nastavení jen prostředí a mezní dobu odezvy.
+     */
     public function send(SaleData $sale, bool $firstAttempt = true, bool $verifyOnly = false): EetResponse
     {
         $settings = Settings::current() ?? throw IncompleteSetup::missingSettings();
         $certificate = Certificate::active() ?? throw IncompleteSetup::missingCertificate();
 
         $messageUuid = (string) Str::uuid();
-        $requestXml = $this->buildMessage($settings, $certificate, $sale, $messageUuid, $firstAttempt, $verifyOnly);
+        $requestXml = $this->buildMessage($certificate, $sale, $messageUuid, $firstAttempt, $verifyOnly);
 
         try {
             $httpResponse = Http::timeout($settings->response_timeout)
@@ -68,7 +71,6 @@ class SoapEetClient implements EetClient
      * Klíče pole jsou názvy atributů rozhraní EET.
      */
     protected function buildMessage(
-        Settings $settings,
         Certificate $certificate,
         SaleData $sale,
         string $messageUuid,
@@ -77,9 +79,9 @@ class SoapEetClient implements EetClient
     ): string {
         try {
             return new Client($certificate->private_key, $certificate->certificate)->buildSignedMessage([
-                'eic_popl' => $settings->taxpayer_eic,
-                'id_jednotky' => $settings->unit_id,
-                'id_pokl' => $settings->register_id,
+                'eic_popl' => $sale->taxpayerEic,
+                'id_jednotky' => $sale->unitId,
+                'id_pokl' => $sale->registerId,
                 'porad_cis' => $sale->receiptNumber,
                 'dat_trzby' => $sale->soldAt,
                 'celk_trzba' => $sale->totalAmount,

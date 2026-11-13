@@ -4,8 +4,8 @@ namespace App\Modules\Eet\tests\Http\Controllers;
 
 use App\Models\User;
 use App\Modules\Eet\Enums\PaymentMethod;
-use App\Modules\Eet\Models\Settings;
 use App\Modules\Eet\Models\Sale;
+use App\Modules\Eet\Models\Settings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -36,15 +36,16 @@ class ReceiptControllerTest extends TestCase
 
     public function test_receipt_shows_the_shop_the_sale_and_the_pok(): void
     {
-        $settings = Settings::factory()->create(['premises_name' => 'Estetic Ústí', 'taxpayer_eic' => 'CZ683555118']);
         $sale = Sale::factory()->confirmed()->create([
             'receipt_number' => '42',
+            'premises_name' => 'Estetic Ústí',
+            'taxpayer_eic' => 'CZ683555118',
             'total_amount' => '1500.50',
             'payment_method' => PaymentMethod::Card,
             'sold_at' => '2027-01-09 04:25:28',
         ]);
 
-        $this->view('eet::receipt', ['sale' => $sale, 'settings' => $settings])
+        $this->view('eet::receipt', ['sale' => $sale])
             ->assertSeeText('Estetic Ústí')
             ->assertSeeText('EIČ: CZ683555118')
             ->assertSeeText('42')
@@ -59,9 +60,20 @@ class ReceiptControllerTest extends TestCase
     {
         $sale = Sale::factory()->awaitingRetry()->create();
 
-        $this->view('eet::receipt', ['sale' => $sale, 'settings' => Settings::factory()->create()])
+        $this->view('eet::receipt', ['sale' => $sale])
             ->assertSeeText('dosud nebyla potvrzena')
             ->assertDontSeeText('POK:');
+    }
+
+    public function test_receipt_keeps_the_taxpayer_of_the_sale_after_the_settings_change(): void
+    {
+        Settings::factory()->create(['premises_name' => 'Nový provozovatel', 'taxpayer_eic' => 'CZ00000019']);
+        $sale = Sale::factory()->confirmed()->create(['premises_name' => 'Estetic Ústí', 'taxpayer_eic' => 'CZ683555118']);
+
+        $this->view('eet::receipt', ['sale' => $sale])
+            ->assertSeeText('Estetic Ústí')
+            ->assertSeeText('EIČ: CZ683555118')
+            ->assertDontSeeText('Nový provozovatel');
     }
 
     public function test_rejected_sale_has_no_receipt(): void

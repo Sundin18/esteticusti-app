@@ -8,11 +8,11 @@ use App\Modules\Eet\database\factories\CertificateFactory;
 use App\Modules\Eet\Enums\Environment;
 use App\Modules\Eet\Models\Certificate;
 use App\Modules\Eet\Models\Settings;
-use App\Modules\Eet\Services\EetException;
 use App\Modules\Eet\Services\EetClient;
+use App\Modules\Eet\Services\EetException;
+use App\Modules\Eet\Services\EetResponse;
 use App\Modules\Eet\Services\FakeEetClient;
 use App\Modules\Eet\Services\IncompleteSetup;
-use App\Modules\Eet\Services\EetResponse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -145,6 +145,7 @@ class SettingsTest extends TestCase
 
     public function test_connection_check_sends_a_verification_message_and_shows_success_with_warnings(): void
     {
+        Settings::factory()->create(['taxpayer_eic' => 'CZ683555118']);
         $client = $this->fakeClient()->respondWith(new EetResponse(
             messageUuid: 'b3a09b52-7c87-4014-a496-4c7a53cf9125',
             pok: null,
@@ -162,10 +163,12 @@ class SettingsTest extends TestCase
 
         $this->assertCount(1, $client->sent);
         $this->assertTrue($client->sent[0]['verifyOnly']);
+        $this->assertSame('CZ683555118', $client->sent[0]['sale']->taxpayerEic);
     }
 
     public function test_connection_check_shows_the_error_reported_by_the_service(): void
     {
+        Settings::factory()->create();
         $this->fakeClient()->respondWith(new EetException('Neplatny podpis zpravy', 4));
 
         $this->page()
@@ -176,12 +179,25 @@ class SettingsTest extends TestCase
 
     public function test_connection_check_explains_missing_certificate(): void
     {
+        Settings::factory()->create();
         $this->fakeClient()->respondWith(IncompleteSetup::missingCertificate());
 
         $this->page()
             ->call('verifyConnection')
             ->assertSee('Ověření se nezdařilo')
             ->assertSee('Nejprve nahrajte pokladní certifikát.');
+    }
+
+    public function test_connection_check_explains_missing_settings_without_sending_anything(): void
+    {
+        $client = $this->fakeClient();
+
+        $this->page()
+            ->call('verifyConnection')
+            ->assertSee('Ověření se nezdařilo')
+            ->assertSee('Nejprve vyplňte a uložte údaje poplatníka.');
+
+        $this->assertSame([], $client->sent);
     }
 
     public function test_connection_check_is_forbidden_without_the_administrator_role(): void

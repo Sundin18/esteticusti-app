@@ -4,8 +4,9 @@ namespace App\Modules\Eet\tests\Actions;
 
 use App\Modules\Eet\Actions\SendSale;
 use App\Modules\Eet\Enums\SaleStatus;
-use App\Modules\Eet\Models\Sale;
 use App\Modules\Eet\Models\Message;
+use App\Modules\Eet\Models\Sale;
+use App\Modules\Eet\Models\Settings;
 use App\Modules\Eet\Services\EetException;
 use App\Modules\Eet\Services\FakeEetClient;
 use App\Modules\Eet\Services\IncompleteSetup;
@@ -17,10 +18,17 @@ class SendSaleTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_another_attempt_is_marked_as_repeated_and_confirms_the_sale(): void
+    public function test_another_attempt_is_marked_as_repeated_keeps_the_original_taxpayer_and_confirms_the_sale(): void
     {
         $client = new FakeEetClient;
-        $sale = Sale::factory()->awaitingRetry()->create(['receipt_number' => '7', 'total_amount' => '250.00']);
+        $sale = Sale::factory()->awaitingRetry()->create([
+            'receipt_number' => '7',
+            'total_amount' => '250.00',
+            'taxpayer_eic' => 'CZ683555118',
+            'unit_id' => 101,
+            'register_id' => 'P1',
+        ]);
+        Settings::factory()->create(['taxpayer_eic' => 'CZ00000019', 'unit_id' => 7, 'register_id' => 'JINA']);
         Message::factory()->for($sale)->withError(EetException::CODE_TEMPORARY, 'Spojení s EET selhalo')->create();
 
         $sale = (new SendSale($client))->handle($sale);
@@ -30,6 +38,9 @@ class SendSaleTest extends TestCase
         $this->assertFalse($client->sent[0]['firstAttempt']);
         $this->assertSame('7', $client->sent[0]['sale']->receiptNumber);
         $this->assertSame('250.00', $client->sent[0]['sale']->totalAmount);
+        $this->assertSame('CZ683555118', $client->sent[0]['sale']->taxpayerEic);
+        $this->assertSame(101, $client->sent[0]['sale']->unitId);
+        $this->assertSame('P1', $client->sent[0]['sale']->registerId);
         $this->assertSame($sale->sold_at->getTimestamp(), $client->sent[0]['sale']->soldAt->getTimestamp());
         $this->assertCount(2, $sale->messages);
         $this->assertFalse($sale->messages->last()->is_first_attempt);

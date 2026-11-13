@@ -91,7 +91,7 @@ Zdroje:
 |---|---|
 | `eet_settings` | EIČ (`taxpayer_eic`), název a adresa provozovny, `unit_id`, `register_id`, prostředí (`test` / `production`), mezní doba odezvy, čítač pořadových čísel |
 | `eet_certificates` | šifrovaný privátní klíč a certifikát (cast `encrypted`), platnost od–do, aktivní |
-| `eet_sales` | `receipt_number`, `sold_at`, `total_amount`, `payment_method` (`cash` / `card`), volitelně `customer_id`, `status`, `pok`, `is_test`, `user_id`, volitelně polymorfní `source`, `cancelled_sale_id` |
+| `eet_sales` | `receipt_number`, kopie údajů poplatníka a provozovny platných při vzniku tržby (`taxpayer_eic`, `premises_name`, `premises_address`, `unit_id`, `register_id`), `sold_at`, `total_amount`, `payment_method` (`cash` / `card`), volitelně `customer_id`, `status`, `pok`, `is_test`, `user_id`, volitelně polymorfní `source`, `cancelled_sale_id` |
 | `eet_messages` | každý pokus: `sale_id`, `message_uuid`, `sent_at`, `is_first_attempt`, XML požadavku a odpovědi, kód chyby, varování |
 
 Unikátní index na `eet_sales.receipt_number`. Částky jako `decimal(10,2)`.

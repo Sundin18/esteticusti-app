@@ -4,10 +4,9 @@ namespace App\Modules\Eet\Actions;
 
 use App\Modules\Eet\Enums\SaleStatus;
 use App\Modules\Eet\Models\Sale;
-use App\Modules\Eet\Services\EetException;
 use App\Modules\Eet\Services\EetClient;
+use App\Modules\Eet\Services\EetException;
 use App\Modules\Eet\Services\IncompleteSetup;
-use App\Modules\Eet\Services\SaleData;
 use Illuminate\Support\Facades\Cache;
 
 class SendSale
@@ -51,7 +50,7 @@ class SendSale
 
         try {
             $response = $this->client->send(
-                new SaleData($sale->receipt_number, $sale->sold_at, $sale->total_amount),
+                $sale->toSaleData(),
                 firstAttempt: $firstAttempt,
             );
         } catch (EetException $error) {

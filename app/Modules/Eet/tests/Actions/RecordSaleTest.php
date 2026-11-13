@@ -5,17 +5,17 @@ namespace App\Modules\Eet\tests\Actions;
 use App\Models\Customer;
 use App\Models\User;
 use App\Modules\Eet\Actions\RecordSale;
-use App\Modules\Eet\Enums\SaleStatus;
 use App\Modules\Eet\Enums\PaymentMethod;
+use App\Modules\Eet\Enums\SaleStatus;
 use App\Modules\Eet\Jobs\ResendSale;
 use App\Modules\Eet\Models\Certificate;
-use App\Modules\Eet\Models\Settings;
 use App\Modules\Eet\Models\Sale;
-use App\Modules\Eet\Services\EetException;
+use App\Modules\Eet\Models\Settings;
 use App\Modules\Eet\Services\EetClient;
+use App\Modules\Eet\Services\EetException;
+use App\Modules\Eet\Services\EetResponse;
 use App\Modules\Eet\Services\FakeEetClient;
 use App\Modules\Eet\Services\IncompleteSetup;
-use App\Modules\Eet\Services\EetResponse;
 use DateTimeInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -77,6 +77,25 @@ class RecordSaleTest extends TestCase
         $this->assertTrue($this->client->sent[0]['firstAttempt']);
         $this->assertFalse($this->client->sent[0]['verifyOnly']);
         Queue::assertNothingPushed();
+    }
+
+    public function test_sale_keeps_the_taxpayer_and_premises_valid_when_it_was_recorded(): void
+    {
+        $this->configureModule();
+        $settings = Settings::query()->sole();
+        $settings->update(['taxpayer_eic' => 'CZ683555118', 'premises_name' => 'Estetic Ústí', 'premises_address' => 'Mírové náměstí 1', 'unit_id' => 101, 'register_id' => 'P1']);
+
+        $sale = $this->recordSale(User::factory()->create(), '100.00');
+        $settings->update(['taxpayer_eic' => 'CZ00000019', 'premises_name' => 'Nový provozovatel', 'unit_id' => 7, 'register_id' => 'JINA']);
+
+        $sale->refresh();
+
+        $this->assertSame('CZ683555118', $sale->taxpayer_eic);
+        $this->assertSame('Estetic Ústí', $sale->premises_name);
+        $this->assertSame('Mírové náměstí 1', $sale->premises_address);
+        $this->assertSame(101, $sale->unit_id);
+        $this->assertSame('P1', $sale->register_id);
+        $this->assertSame('CZ683555118', $this->client->sent[0]['sale']->taxpayerEic);
     }
 
     public function test_sale_without_a_customer_is_recorded(): void

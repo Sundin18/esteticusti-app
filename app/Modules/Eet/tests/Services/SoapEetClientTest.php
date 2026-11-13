@@ -30,9 +30,9 @@ class SoapEetClientTest extends TestCase
         Http::preventStrayRequests();
     }
 
-    public function test_verification_message_is_valid_against_the_official_schema_and_accepted(): void
+    public function test_verification_message_is_valid_against_the_official_schema_and_carries_the_taxpayer_of_the_sale(): void
     {
-        $settings = Settings::factory()->create(['taxpayer_eic' => 'CZ683555118', 'unit_id' => 101, 'register_id' => 'P1']);
+        $settings = Settings::factory()->create(['taxpayer_eic' => 'CZ00000019', 'unit_id' => 7, 'register_id' => 'JINA']);
         Certificate::factory()->create();
         Http::fake(['*' => Http::response($this->errorResponse(0, 'Zprava v overovacim modu zpracovana'))]);
 
@@ -170,7 +170,7 @@ class SoapEetClientTest extends TestCase
         Http::fake();
 
         try {
-            (new SoapEetClient)->send(new SaleData('číslo s diakritikou', now(), '1.00'));
+            (new SoapEetClient)->send(new SaleData('CZ683555118', 101, 'P1', 'číslo s diakritikou', now(), '1.00'));
             $this->fail('Invalid sale data should have thrown.');
         } catch (EetException $exception) {
             $this->assertNull($exception->errorCode);
@@ -201,7 +201,7 @@ class SoapEetClientTest extends TestCase
 
     private function saleData(): SaleData
     {
-        return new SaleData('R/1', Carbon::parse('2027-01-09 04:25:28', 'Europe/Prague'), '1500.00');
+        return new SaleData('CZ683555118', 101, 'P1', 'R/1', Carbon::parse('2027-01-09 04:25:28', 'Europe/Prague'), '1500.00');
     }
 
     private function errorResponse(int $code, string $text): string

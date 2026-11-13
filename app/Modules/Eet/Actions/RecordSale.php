@@ -4,12 +4,12 @@ namespace App\Modules\Eet\Actions;
 
 use App\Models\Customer;
 use App\Models\User;
-use App\Modules\Eet\Enums\SaleStatus;
 use App\Modules\Eet\Enums\PaymentMethod;
+use App\Modules\Eet\Enums\SaleStatus;
 use App\Modules\Eet\Jobs\ResendSale;
 use App\Modules\Eet\Models\Certificate;
-use App\Modules\Eet\Models\Settings;
 use App\Modules\Eet\Models\Sale;
+use App\Modules\Eet\Models\Settings;
 use App\Modules\Eet\Services\IncompleteSetup;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +21,8 @@ class RecordSale
     /**
      * Zaeviduje tržbu pod dalším pořadovým číslem a hned se ji pokusí odeslat.
      *
-     * Když je služba nedostupná, tržba se zařadí do fronty k dalším pokusům.
+     * Když je služba nedostupná, tržba se zařadí do fronty k dalším pokusům. Údaje poplatníka
+     * a provozovny se k tržbě zkopírují, aby se pozdější změnou nastavení nezměnily.
      *
      * @param  string  $totalAmount  Částka v Kč jako desetinný řetězec, např. "1500.00".
      * @param  Customer|null  $customer  Klient, kterému byla tržba účtována, pokud je znám.
@@ -48,6 +49,11 @@ class RecordSale
 
             $sale = new Sale([
                 'receipt_number' => (string) $settings->last_receipt_number,
+                'taxpayer_eic' => $settings->taxpayer_eic,
+                'premises_name' => $settings->premises_name,
+                'premises_address' => $settings->premises_address,
+                'unit_id' => $settings->unit_id,
+                'register_id' => $settings->register_id,
                 'sold_at' => now(),
                 'total_amount' => $totalAmount,
                 'payment_method' => $paymentMethod,

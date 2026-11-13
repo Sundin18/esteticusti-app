@@ -18,9 +18,9 @@
         </style>
     </head>
     <body>
-        <h1>{{ $settings->premises_name }}</h1>
-        <p class="center">{{ $settings->premises_address }}</p>
-        <p class="center">EIČ: {{ $settings->taxpayer_eic }}</p>
+        <h1>{{ $sale->premises_name }}</h1>
+        <p class="center">{{ $sale->premises_address }}</p>
+        <p class="center">EIČ: {{ $sale->taxpayer_eic }}</p>
 
         <div class="divider"></div>
 
@@ -35,7 +35,7 @@
             </tr>
             <tr>
                 <td>Pokladna</td>
-                <td class="value">{{ $settings->register_id }}</td>
+                <td class="value">{{ $sale->register_id }}</td>
             </tr>
             <tr>
                 <td>Platba</td>

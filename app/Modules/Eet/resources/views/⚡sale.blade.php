@@ -83,6 +83,10 @@ new #[Title('EET – detail tržby')] class extends Component {
             <flux:heading>{{ $sale->customer->name ?? '—' }}</flux:heading>
         </div>
         <div>
+            <flux:text>Poplatník a provozovna</flux:text>
+            <flux:heading>{{ $sale->taxpayer_eic }}, {{ $sale->premises_name }}</flux:heading>
+        </div>
+        <div>
             <flux:text>Zadal</flux:text>
             <flux:heading>{{ $sale->user->name }}</flux:heading>
         </div>
