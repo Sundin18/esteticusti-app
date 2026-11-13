@@ -11,6 +11,8 @@
                 <flux:sidebar.collapse class="lg:hidden" />
             </flux:sidebar.header>
 
+            <flux:text size="sm" class="-mt-2 px-2" data-test="app-version">{{ __('Version') }} {{ config('app.version') }}</flux:text>
+
             <flux:sidebar.nav>
                 @foreach ($navigation->visibleTo(auth()->user()) as $group => $items)
                     <flux:sidebar.group :heading="__($group)" class="grid">

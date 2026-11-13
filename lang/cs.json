@@ -184,6 +184,7 @@
     "Verify authentication code": "Ověření kódu",
     "Verify Email Address": "Ověřte e-mailovou adresu",
     "Verify your email address": "Ověřte svou e-mailovou adresu",
+    "Version": "Verze",
     "View recovery codes": "Zobrazit záložní kódy",
     "Welcome": "Vítejte",
     "When you enable two-factor authentication, you will be prompted for a secure pin during login. This pin can be retrieved from a TOTP-supported application on your phone.": "Po zapnutí dvoufázového ověření budete při přihlášení vyzváni k zadání bezpečnostního kódu. Ten získáte v aplikaci podporující TOTP ve svém telefonu.",

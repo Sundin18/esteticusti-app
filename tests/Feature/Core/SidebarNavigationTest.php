@@ -24,6 +24,14 @@ class SidebarNavigationTest extends TestCase
             ->assertSee('href="'.route('eet.overview').'"', false);
     }
 
+    public function test_sidebar_shows_the_application_version_from_the_configuration(): void
+    {
+        config(['app.version' => '9.8.7']);
+        $this->actingAs(User::factory()->create());
+
+        $this->get(route('dashboard'))->assertOk()->assertSeeText('Verze 9.8.7');
+    }
+
     public function test_sidebar_hides_items_the_user_is_not_allowed_to_see(): void
     {
         $this->registerAdminOnlyItem();
