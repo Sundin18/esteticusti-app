@@ -33,6 +33,7 @@ class SoapEetClient implements EetClient
                 'Spojení s EET selhalo: '.$vyjimka->getMessage(),
                 EetChyba::KOD_DOCASNA,
                 $xmlPozadavku,
+                uuidZpravy: $uuidZpravy,
                 previous: $vyjimka,
             );
         }
@@ -47,7 +48,7 @@ class SoapEetClient implements EetClient
                 Client::verifyResponseSignature($xmlOdpovedi);
             }
         } catch (EetException $vyjimka) {
-            throw new EetChyba($vyjimka->getMessage(), $vyjimka->getCode(), $xmlPozadavku, $xmlOdpovedi, $vyjimka);
+            throw new EetChyba($vyjimka->getMessage(), $vyjimka->getCode(), $xmlPozadavku, $xmlOdpovedi, $uuidZpravy, $vyjimka);
         }
 
         return new Odpoved(

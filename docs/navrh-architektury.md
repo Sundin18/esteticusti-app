@@ -90,7 +90,7 @@ Zdroje:
 |---|---|
 | `eet_nastaveni` | EIČ, název a adresa provozovny, `id_jednotky`, `id_pokl`, prostředí (test / produkce), mezní doba odezvy, čítač pořadových čísel |
 | `eet_certifikaty` | šifrovaný privátní klíč a certifikát (cast `encrypted`), platnost od–do, aktivní |
-| `eet_trzby` | `porad_cis`, `dat_trzby`, `celk_trzba`, stav, `pok`, `user_id`, volitelně polymorfní zdroj, `storno_trzby_id` |
+| `eet_trzby` | `porad_cis`, `dat_trzby`, `celk_trzba`, stav, `pok`, `testovaci`, `user_id`, volitelně polymorfní zdroj, `storno_trzby_id` |
 | `eet_zpravy` | každý pokus: `trzba_id`, `uuid_zpravy`, `dat_odesl`, `prvni_zaslani`, XML požadavku a odpovědi, kód chyby, varování |
 
 Unikátní index na `eet_trzby.porad_cis`. Částky jako `decimal(10,2)`.
@@ -103,7 +103,7 @@ Unikátní index na `eet_trzby.porad_cis`. Částky jako `decimal(10,2)`.
 
 1. `EvidujTrzbu` v DB transakci se zámkem (`lockForUpdate` na `eet_nastaveni`) přidělí pořadové číslo a uloží tržbu.
 2. Synchronní pokus s nastaveným timeoutem; uživatel vidí POK.
-3. Timeout nebo kód -1 → job `OdesliTrzbu` ve frontě s rostoucím odstupem.
+3. Timeout nebo kód -1 → job `OdesliTrzbu` ve frontě s rostoucím odstupem (1, 5, 15, 30 min, pak po hodině) po dobu 48 h. Jeden pokus o odeslání dělá akce `PosliTrzbu`, kterou používá i „Odeslat znovu“.
 4. Plánovaná úloha upozorní na tržby bez POK starší 24 h a na certifikát před vypršením.
 
 ### Vrstvy

@@ -19,12 +19,14 @@ class EetChyba extends RuntimeException
 
     /**
      * @param  int|null  $kod  EET error code, or null when the message could not even be built.
+     * @param  string|null  $uuidZpravy  Identifier of the message that failed, when one was built.
      */
     public function __construct(
         string $message,
         public readonly ?int $kod = null,
         public readonly ?string $xmlPozadavku = null,
         public readonly ?string $xmlOdpovedi = null,
+        public readonly ?string $uuidZpravy = null,
         ?Throwable $previous = null,
     ) {
         parent::__construct($message, $kod ?? 0, $previous);

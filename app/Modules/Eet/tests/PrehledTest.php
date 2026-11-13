@@ -3,7 +3,10 @@
 namespace App\Modules\Eet\tests;
 
 use App\Models\User;
+use App\Modules\Eet\Models\Certifikat;
+use App\Modules\Eet\Models\Trzba;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class PrehledTest extends TestCase
@@ -27,5 +30,46 @@ class PrehledTest extends TestCase
         $this->actingAs(User::factory()->create());
 
         $this->get('/eet')->assertOk()->assertSeeText('Evidence tržeb');
+    }
+
+    public function test_overview_sums_todays_sales_without_rejected_ones(): void
+    {
+        Trzba::factory()->potvrzena()->create(['celk_trzba' => '1000.00']);
+        Trzba::factory()->kOpakovani()->create(['celk_trzba' => '500.50']);
+        Trzba::factory()->zamitnuta()->create(['celk_trzba' => '99.00']);
+        Trzba::factory()->potvrzena()->create(['celk_trzba' => '700.00', 'dat_trzby' => now()->subDay()]);
+
+        Livewire::actingAs(User::factory()->create())
+            ->test('eet::prehled')
+            ->assertSee("1\u{00A0}500,50\u{00A0}Kč")
+            ->assertSee('Počet: 2')
+            ->assertSet('pocetNepotvrzenych', 2);
+    }
+
+    public function test_overview_reports_a_missing_certificate(): void
+    {
+        Livewire::actingAs(User::factory()->create())
+            ->test('eet::prehled')
+            ->assertSee('Chybí');
+    }
+
+    public function test_overview_shows_the_certificate_validity(): void
+    {
+        $this->travelTo('2027-01-09 12:00:00');
+        Certifikat::factory()->create(['platnost_do' => '2027-05-14 11:43:39']);
+
+        Livewire::actingAs(User::factory()->create())
+            ->test('eet::prehled')
+            ->assertSee('Platný')
+            ->assertSee('do 14. 5. 2027');
+    }
+
+    public function test_overview_flags_an_expired_certificate(): void
+    {
+        Certifikat::factory()->vyprsely()->create();
+
+        Livewire::actingAs(User::factory()->create())
+            ->test('eet::prehled')
+            ->assertSee('Neplatný');
     }
 }

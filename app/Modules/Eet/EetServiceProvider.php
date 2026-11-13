@@ -58,6 +58,21 @@ class EetServiceProvider extends ServiceProvider
         ));
 
         $navigation->add('EET', new NavigationItem(
+            label: 'Nová tržba',
+            route: 'eet.trzby.nova',
+            icon: 'plus-circle',
+            ability: 'eet.view',
+        ));
+
+        $navigation->add('EET', new NavigationItem(
+            label: 'Tržby',
+            route: 'eet.trzby.seznam',
+            icon: 'list-bullet',
+            ability: 'eet.view',
+            activeRoutes: ['eet.trzby.seznam', 'eet.trzby.detail'],
+        ));
+
+        $navigation->add('EET', new NavigationItem(
             label: 'Nastavení',
             route: 'eet.nastaveni',
             icon: 'cog-6-tooth',
