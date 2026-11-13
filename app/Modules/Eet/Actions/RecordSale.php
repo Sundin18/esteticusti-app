@@ -24,9 +24,10 @@ class RecordSale
      * Když je služba nedostupná, tržba se zařadí do fronty k dalším pokusům. Údaje poplatníka
      * a provozovny se k tržbě zkopírují, aby se pozdější změnou nastavení nezměnily.
      *
-     * @param  string  $totalAmount  Částka v Kč jako desetinný řetězec, např. "1500.00".
+     * @param  string  $totalAmount  Částka v Kč jako desetinný řetězec, např. "1500.00"; u storna záporná.
      * @param  Customer|null  $customer  Klient, kterému byla tržba účtována, pokud je znám.
      * @param  Model|null  $source  Záznam v jiném modulu, ke kterému tržba patří.
+     * @param  Sale|null  $cancelledSale  Původní tržba, pokud je tato tržba jejím stornem.
      *
      * @throws IncompleteSetup Když chybí nastavení nebo certifikát; žádné pořadové číslo se nespotřebuje.
      */
@@ -36,8 +37,9 @@ class RecordSale
         PaymentMethod $paymentMethod,
         ?Customer $customer = null,
         ?Model $source = null,
+        ?Sale $cancelledSale = null,
     ): Sale {
-        $sale = DB::transaction(function () use ($user, $totalAmount, $paymentMethod, $customer, $source): Sale {
+        $sale = DB::transaction(function () use ($user, $totalAmount, $paymentMethod, $customer, $source, $cancelledSale): Sale {
             $settings = Settings::query()->lockForUpdate()->first() ?? throw IncompleteSetup::missingSettings();
 
             if (Certificate::active() === null) {
@@ -59,6 +61,7 @@ class RecordSale
                 'payment_method' => $paymentMethod,
                 'user_id' => $user->id,
                 'customer_id' => $customer?->id,
+                'cancelled_sale_id' => $cancelledSale?->id,
             ]);
             $sale->source()->associate($source);
             $sale->save();

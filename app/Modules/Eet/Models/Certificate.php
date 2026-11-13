@@ -55,6 +55,14 @@ class Certificate extends Model
         return self::query()->where('is_active', true)->latest('id')->first();
     }
 
+    /**
+     * Zda platnost certifikátu skončí během zadaného počtu dní (nebo už skončila).
+     */
+    public function expiresWithinDays(int $days): bool
+    {
+        return $this->valid_until->lessThanOrEqualTo(now()->addDays($days));
+    }
+
     public function isValid(): bool
     {
         return now()->between($this->valid_from, $this->valid_until);

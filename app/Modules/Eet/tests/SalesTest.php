@@ -5,9 +5,11 @@ namespace App\Modules\Eet\tests;
 use App\Models\Customer;
 use App\Models\User;
 use App\Modules\Eet\Enums\PaymentMethod;
+use App\Modules\Eet\Exports\SalesExport;
 use App\Modules\Eet\Models\Sale;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Maatwebsite\Excel\Facades\Excel;
 use Tests\TestCase;
 
 class SalesTest extends TestCase
@@ -82,6 +84,48 @@ class SalesTest extends TestCase
             ->set('status', 'awaiting_retry')
             ->assertSee('OPAKOVAT-1')
             ->assertDontSee('POTVRZENA-1');
+    }
+
+    public function test_unconfirmed_filter_shows_every_sale_without_a_confirmation(): void
+    {
+        Sale::factory()->confirmed()->create(['receipt_number' => 'CONFIRMED-1']);
+        Sale::factory()->awaitingRetry()->create(['receipt_number' => 'RETRY-1']);
+        Sale::factory()->rejected()->create(['receipt_number' => 'REJECTED-1']);
+        $this->actingAs(User::factory()->create());
+
+        $this->get(route('eet.sales.index', ['status' => Sale::FILTER_UNCONFIRMED]))
+            ->assertOk()
+            ->assertSeeText('RETRY-1')
+            ->assertSeeText('REJECTED-1')
+            ->assertDontSeeText('CONFIRMED-1');
+    }
+
+    public function test_cancellation_is_marked_in_the_list(): void
+    {
+        $sale = Sale::factory()->confirmed()->create(['total_amount' => '250.00']);
+        Sale::factory()->cancelling($sale)->create();
+
+        Livewire::actingAs(User::factory()->create())
+            ->test('eet::sales')
+            ->assertSee('Storno')
+            ->assertSee("-250,00\u{00A0}Kč");
+    }
+
+    public function test_export_downloads_the_sales_matching_the_current_filter(): void
+    {
+        Excel::fake();
+        $this->travelTo('2027-01-15 10:00:00');
+
+        Livewire::actingAs(User::factory()->create())
+            ->test('eet::sales')
+            ->set('status', 'confirmed')
+            ->set('dateFrom', '2027-01-01')
+            ->set('dateTo', '2027-01-31')
+            ->call('export');
+
+        Excel::assertDownloaded('trzby-2027-01-15.xlsx', fn (SalesExport $export): bool => $export->status === 'confirmed'
+            && $export->dateFrom === '2027-01-01'
+            && $export->dateTo === '2027-01-31');
     }
 
     public function test_sales_can_be_filtered_by_date_range_including_both_days(): void

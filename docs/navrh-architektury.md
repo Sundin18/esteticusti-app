@@ -105,7 +105,7 @@ Unikátní index na `eet_sales.receipt_number`. Částky jako `decimal(10,2)`.
 1. `RecordSale` v DB transakci se zámkem (`lockForUpdate` na `eet_settings`) přidělí pořadové číslo a uloží tržbu.
 2. Synchronní pokus s nastaveným timeoutem; uživatel vidí POK.
 3. Timeout nebo kód -1 → job `ResendSale` ve frontě s rostoucím odstupem (1, 5, 15, 30 min, pak po hodině) po dobu 48 h. Jeden pokus o odeslání dělá akce `SendSale`, kterou používá i „Odeslat znovu“.
-4. Plánovaná úloha upozorní na tržby bez POK starší 24 h a na certifikát před vypršením.
+4. Přehled upozorní na tržby bez POK starší 24 h a na certifikát, který chybí, vypršel nebo vyprší do 30 dnů. Upozornění jsou zatím jen v aplikaci, bez plánované úlohy a e-mailů.
 
 ### Vrstvy
 
@@ -114,6 +114,7 @@ Unikátní index na `eet_sales.receipt_number`. Částky jako `decimal(10,2)`.
 - PHP `SoapClient` se nepoužívá (neumí WS-Security); HTTP přes Laravel `Http`, takže zůstává XML požadavku i odpovědi a testy jdou přes `Http::fake`.
 - O opakování rozhoduje `EetException::isTemporary()` (kód `-1` a neověřitelný podpis odpovědi), ne `isRetryable()` knihovny; kód `8` je trvalá chyba.
 - Adresy prostředí jsou v `config/eet.php` modulu (výchozí z knihovny, přepsatelné přes `EET_URL_TEST` a `EET_URL_PRODUCTION`).
+- Export tržeb do XLSX: `maatwebsite/excel` (`Exports\SalesExport`), podle filtru v seznamu tržeb.
 - Účtenka: `barryvdh/laravel-dompdf`; obsah: provozovna, EIČ, pořadové číslo, datum a čas, částka, POK.
 
 ### Obrazovky (Livewire + Flux Pro)
@@ -125,7 +126,7 @@ Unikátní index na `eet_sales.receipt_number`. Částky jako `decimal(10,2)`.
 
 ### Otevřené body
 
-- Storno: specifikace ho nepopisuje; formát částky dovoluje záporné hodnoty, počítá se se stornem jako zápornou tržbou. Ověřit v metodice Finanční správy.
+- Storno: ověřeno v dokumentu Finanční správy „Popis položek datové zprávy s příklady jejich vyplnění“ (v1.0, kap. 4). Storno i částečné storno se eviduje jako nová tržba se zápornou částkou, vlastním pořadovým číslem a datem vrácení peněz; služba ho s původní tržbou nepáruje. Oprava = storno a nová tržba. Vazbu `cancelled_sale_id` si drží jen aplikace (akce `CancelSale`).
 - Náležitosti účtenky, pokud se vydává: ověřit v zákoně.
 - Automatická obnova certifikátu přes API CA EET: až později, zpočátku ruční nahrání.
 

@@ -29,6 +29,12 @@
                 <td>Účtenka č.</td>
                 <td class="value">{{ $sale->receipt_number }}</td>
             </tr>
+            @if ($sale->isCancellation())
+                <tr>
+                    <td>Storno účtenky č.</td>
+                    <td class="value">{{ $sale->cancelledSale->receipt_number }}</td>
+                </tr>
+            @endif
             <tr>
                 <td>Datum a čas</td>
                 <td class="value">{{ $sale->sold_at->format('j. n. Y H:i:s') }}</td>

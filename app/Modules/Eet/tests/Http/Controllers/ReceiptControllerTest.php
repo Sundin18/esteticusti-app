@@ -76,6 +76,16 @@ class ReceiptControllerTest extends TestCase
             ->assertDontSeeText('Nový provozovatel');
     }
 
+    public function test_receipt_of_a_cancellation_refers_to_the_original_receipt(): void
+    {
+        $sale = Sale::factory()->confirmed()->create(['receipt_number' => '42', 'total_amount' => '100.00']);
+        $cancellation = Sale::factory()->cancelling($sale)->create();
+
+        $this->view('eet::receipt', ['sale' => $cancellation])
+            ->assertSeeTextInOrder(['Storno účtenky č.', '42'])
+            ->assertSeeText("-100,00\u{00A0}Kč");
+    }
+
     public function test_rejected_sale_has_no_receipt(): void
     {
         Settings::factory()->create();

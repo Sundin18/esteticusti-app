@@ -1,17 +1,21 @@
 <?php
 
 use App\Modules\Eet\Enums\SaleStatus;
+use App\Modules\Eet\Exports\SalesExport;
 use App\Modules\Eet\Models\Sale;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 new #[Title('EET – tržby')] class extends Component {
     use WithPagination;
 
+    #[Url]
     public string $status = '';
     public ?string $dateFrom = null;
     public ?string $dateTo = null;
@@ -43,6 +47,19 @@ new #[Title('EET – tržby')] class extends Component {
     }
 
     /**
+     * Stáhne tržby odpovídající aktuálnímu filtru jako soubor XLSX.
+     */
+    public function export(): BinaryFileResponse
+    {
+        $this->authorize('eet.view');
+
+        return Excel::download(
+            new SalesExport($this->status, $this->dateFrom, $this->dateTo),
+            'trzby-'.now()->format('Y-m-d').'.xlsx',
+        );
+    }
+
+    /**
      * @return LengthAwarePaginator<int, Sale>
      */
     #[Computed]
@@ -50,9 +67,7 @@ new #[Title('EET – tržby')] class extends Component {
     {
         return Sale::query()
             ->with(['user', 'customer'])
-            ->when(SaleStatus::tryFrom($this->status), fn (Builder $query, SaleStatus $status) => $query->where('status', $status))
-            ->when($this->dateFrom, fn (Builder $query, string $dateFrom) => $query->whereDate('sold_at', '>=', $dateFrom))
-            ->when($this->dateTo, fn (Builder $query, string $dateTo) => $query->whereDate('sold_at', '<=', $dateTo))
+            ->matchingFilters($this->status, $this->dateFrom, $this->dateTo)
             ->orderBy($this->sortBy, $this->sortDirection === 'asc' ? 'asc' : 'desc')
             ->paginate(25);
     }
@@ -65,7 +80,11 @@ new #[Title('EET – tržby')] class extends Component {
             <flux:subheading size="lg">Všechny zaevidované tržby</flux:subheading>
         </div>
 
-        <flux:button :href="route('eet.sales.create')" variant="primary" icon="plus" wire:navigate>Nová tržba</flux:button>
+        <div class="flex gap-2">
+            <flux:button wire:click="export" icon="arrow-down-tray" data-test="export">Export do XLSX</flux:button>
+
+            <flux:button :href="route('eet.sales.create')" variant="primary" icon="plus" wire:navigate>Nová tržba</flux:button>
+        </div>
     </div>
 
     <flux:separator variant="subtle" class="my-6" />
@@ -73,6 +92,7 @@ new #[Title('EET – tržby')] class extends Component {
     <div class="mb-6 grid gap-4 sm:grid-cols-3">
         <flux:select wire:model.live="status" label="Stav">
             <flux:select.option value="">Všechny stavy</flux:select.option>
+            <flux:select.option :value="Sale::FILTER_UNCONFIRMED">Všechny nepotvrzené</flux:select.option>
             @foreach (SaleStatus::cases() as $option)
                 <flux:select.option wire:key="status-{{ $option->value }}" :value="$option->value">{{ $option->label() }}</flux:select.option>
             @endforeach
@@ -98,7 +118,12 @@ new #[Title('EET – tržby')] class extends Component {
         <flux:table.rows>
             @forelse ($this->sales as $sale)
                 <flux:table.row :key="$sale->id">
-                    <flux:table.cell variant="strong">{{ $sale->receipt_number }}</flux:table.cell>
+                    <flux:table.cell variant="strong">
+                        {{ $sale->receipt_number }}
+                        @if ($sale->isCancellation())
+                            <flux:badge size="sm" color="zinc" inset="top bottom">Storno</flux:badge>
+                        @endif
+                    </flux:table.cell>
                     <flux:table.cell>{{ $sale->sold_at->format('j. n. Y H:i') }}</flux:table.cell>
                     <flux:table.cell align="end">{{ $sale->formattedAmount() }}</flux:table.cell>
                     <flux:table.cell>{{ $sale->payment_method->label() }}</flux:table.cell>

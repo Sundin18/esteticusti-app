@@ -51,6 +51,18 @@ class SaleFactory extends Factory
     }
 
     /**
+     * Tržba je potvrzeným stornem zadané tržby na celou její částku.
+     */
+    public function cancelling(Sale $sale): static
+    {
+        return $this->confirmed()->state(fn (array $attributes) => [
+            'cancelled_sale_id' => $sale->id,
+            'total_amount' => bcsub('0', $sale->total_amount, 2),
+            'payment_method' => $sale->payment_method,
+        ]);
+    }
+
+    /**
      * Tržbu se nepodařilo doručit a čeká na další pokus.
      */
     public function awaitingRetry(): static

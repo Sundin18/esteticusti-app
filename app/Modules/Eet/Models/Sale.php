@@ -9,8 +9,10 @@ use App\Modules\Eet\Enums\PaymentMethod;
 use App\Modules\Eet\Enums\SaleStatus;
 use App\Modules\Eet\Services\SaleData;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,7 +29,7 @@ use Illuminate\Support\Carbon;
  * @property int $unit_id
  * @property string $register_id
  * @property Carbon $sold_at
- * @property string $total_amount Částka v Kč na dvě desetinná místa.
+ * @property numeric-string $total_amount Částka v Kč na dvě desetinná místa.
  * @property PaymentMethod $payment_method
  * @property SaleStatus $status
  * @property string|null $pok
@@ -42,9 +44,14 @@ use Illuminate\Support\Carbon;
  */
 #[Table('eet_sales')]
 #[UseFactory(SaleFactory::class)]
-#[Fillable(['receipt_number', 'taxpayer_eic', 'premises_name', 'premises_address', 'unit_id', 'register_id', 'sold_at', 'total_amount', 'payment_method', 'status', 'pok', 'is_test', 'user_id', 'customer_id'])]
+#[Fillable(['receipt_number', 'taxpayer_eic', 'premises_name', 'premises_address', 'unit_id', 'register_id', 'sold_at', 'total_amount', 'payment_method', 'status', 'pok', 'is_test', 'user_id', 'customer_id', 'cancelled_sale_id'])]
 class Sale extends Model
 {
+    /**
+     * Hodnota filtru stavu, která vybere všechny tržby bez potvrzení.
+     */
+    public const string FILTER_UNCONFIRMED = 'unconfirmed';
+
     /** @use HasFactory<SaleFactory> */
     use HasFactory;
 
@@ -96,6 +103,55 @@ class Sale extends Model
     }
 
     /**
+     * Původní tržba, kterou tato tržba stornuje.
+     *
+     * @return BelongsTo<self, $this>
+     */
+    public function cancelledSale(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'cancelled_sale_id');
+    }
+
+    /**
+     * Storna této tržby od nejstaršího.
+     *
+     * @return HasMany<self, $this>
+     */
+    public function cancellations(): HasMany
+    {
+        return $this->hasMany(self::class, 'cancelled_sale_id')->orderBy('id');
+    }
+
+    /**
+     * Omezí dotaz podle filtru ze seznamu tržeb.
+     *
+     * @param  Builder<self>  $query
+     * @param  string  $status  Hodnota stavu, "unconfirmed" pro vše bez potvrzení, nebo prázdný řetězec pro všechny.
+     * @param  string|null  $dateFrom  První den období ve tvaru Y-m-d.
+     * @param  string|null  $dateTo  Poslední den období ve tvaru Y-m-d.
+     */
+    #[Scope]
+    protected function matchingFilters(Builder $query, string $status = '', ?string $dateFrom = null, ?string $dateTo = null): void
+    {
+        $query
+            ->when($status === self::FILTER_UNCONFIRMED, fn (Builder $query) => $query->where('status', '!=', SaleStatus::Confirmed))
+            ->when(SaleStatus::tryFrom($status), fn (Builder $query, SaleStatus $status) => $query->where('status', $status))
+            ->when($dateFrom, fn (Builder $query, string $dateFrom) => $query->whereDate('sold_at', '>=', $dateFrom))
+            ->when($dateTo, fn (Builder $query, string $dateTo) => $query->whereDate('sold_at', '<=', $dateTo));
+    }
+
+    /**
+     * Omezí dotaz na tržby, které nemají potvrzení déle než zadaný počet hodin.
+     *
+     * @param  Builder<self>  $query
+     */
+    #[Scope]
+    protected function unconfirmedLongerThan(Builder $query, int $hours): void
+    {
+        $query->where('status', '!=', SaleStatus::Confirmed)->where('sold_at', '<=', now()->subHours($hours));
+    }
+
+    /**
      * Všechny pokusy o odeslání tržby od nejstaršího.
      *
      * @return HasMany<Message, $this>
@@ -141,6 +197,23 @@ class Sale extends Model
             soldAt: $this->sold_at,
             totalAmount: $this->total_amount,
         );
+    }
+
+    public function isCancellation(): bool
+    {
+        return $this->cancelled_sale_id !== null;
+    }
+
+    /**
+     * Vrátí částku, kterou lze z tržby ještě stornovat; zamítnutá storna se nepočítají.
+     *
+     * @return numeric-string
+     */
+    public function refundableAmount(): string
+    {
+        $cancelled = $this->cancellations()->where('status', '!=', SaleStatus::Rejected)->sum('total_amount');
+
+        return bcadd($this->total_amount, number_format((float) $cancelled, 2, '.', ''), 2);
     }
 
     public function isConfirmed(): bool
