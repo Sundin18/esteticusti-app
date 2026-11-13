@@ -109,8 +109,10 @@ Unikátní index na `eet_trzby.porad_cis`. Částky jako `decimal(10,2)`.
 ### Vrstvy
 
 - `EetClient` (rozhraní): `SoapEetClient`, `FakeEetClient` pro testy.
-- `ZpravaBuilder` (XML podle XSD), `ZpravaSigner` (WS-Security, `robrichards/xmlseclibs`), `OdpovedParser` (ověří podpis odpovědi).
-- PHP `SoapClient` se nepoužívá (neumí WS-Security); HTTP přes Laravel `Http`.
+- Sestavení a podpis zprávy (WS-Security) i ověření podpisu odpovědi dělá knihovna `jakubsilny/eet2` (připnutá verze 1.0.0), schovaná za `SoapEetClient`. Používají se její `buildSignedMessage()`, `parseResponse()` a `verifyResponseSignature()`, ne `send()`.
+- PHP `SoapClient` se nepoužívá (neumí WS-Security); HTTP přes Laravel `Http`, takže zůstává XML požadavku i odpovědi a testy jdou přes `Http::fake`.
+- O opakování rozhoduje `EetChyba::jeDocasna()` (kód `-1` a neověřitelný podpis odpovědi), ne `isRetryable()` knihovny; kód `8` je trvalá chyba.
+- Adresy prostředí jsou v `config/eet.php` modulu (výchozí z knihovny, přepsatelné přes `EET_URL_TEST` a `EET_URL_PRODUKCE`).
 - Účtenka: `barryvdh/laravel-dompdf`; obsah: provozovna, EIČ, pořadové číslo, datum a čas, částka, POK.
 
 ### Obrazovky (Livewire + Flux Pro)

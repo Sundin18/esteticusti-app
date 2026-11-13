@@ -7,4 +7,8 @@ Route::middleware(['web', 'auth', 'verified', 'can:eet.view'])
     ->name('eet.')
     ->group(function () {
         Route::livewire('/', 'eet::prehled')->name('prehled');
+
+        Route::livewire('nastaveni', 'eet::nastaveni')
+            ->middleware('can:eet.manage')
+            ->name('nastaveni');
     });

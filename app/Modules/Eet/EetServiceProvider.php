@@ -6,12 +6,24 @@ use App\Core\Authorization\UserRole;
 use App\Core\Navigation\NavigationItem;
 use App\Core\Navigation\NavigationRegistry;
 use App\Models\User;
+use App\Modules\Eet\Services\EetClient;
+use App\Modules\Eet\Services\SoapEetClient;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
 
 class EetServiceProvider extends ServiceProvider
 {
+    /**
+     * Register the module's configuration and services.
+     */
+    public function register(): void
+    {
+        $this->mergeConfigFrom(__DIR__.'/config/eet.php', 'eet');
+
+        $this->app->bind(EetClient::class, SoapEetClient::class);
+    }
+
     /**
      * Bootstrap the EET module.
      */
@@ -43,6 +55,13 @@ class EetServiceProvider extends ServiceProvider
             route: 'eet.prehled',
             icon: 'banknotes',
             ability: 'eet.view',
+        ));
+
+        $navigation->add('EET', new NavigationItem(
+            label: 'Nastavení',
+            route: 'eet.nastaveni',
+            icon: 'cog-6-tooth',
+            ability: 'eet.manage',
         ));
     }
 }
