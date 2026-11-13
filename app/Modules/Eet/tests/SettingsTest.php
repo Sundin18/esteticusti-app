@@ -166,6 +166,23 @@ class SettingsTest extends TestCase
         $this->assertSame('CZ683555118', $client->sent[0]['sale']->taxpayerEic);
     }
 
+    public function test_connection_check_names_the_environment_from_the_settings_not_from_the_response(): void
+    {
+        Settings::factory()->production()->create();
+        $this->fakeClient()->respondWith(new EetResponse(
+            messageUuid: 'b3a09b52-7c87-4014-a496-4c7a53cf9125',
+            pok: null,
+            isTest: true,
+            warnings: [],
+            requestXml: '<Trzba/>',
+            responseXml: '<Odpoved/>',
+        ));
+
+        $this->page()
+            ->call('verifyConnection')
+            ->assertSee('Produkční prostředí EET zprávu přijalo.');
+    }
+
     public function test_connection_check_shows_the_error_reported_by_the_service(): void
     {
         Settings::factory()->create();

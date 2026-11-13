@@ -122,6 +122,8 @@ new #[Title('EET – nastavení')] class extends Component {
 
     /**
      * Odešle zprávu v ověřovacím režimu a zobrazí, co služba EET odpověděla.
+     *
+     * Prostředí se bere z nastavení, kam zpráva odešla; odpověď ověřovacího režimu příznak test spolehlivě nenese.
      */
     public function verifyConnection(VerifyConnection $verifyConnection): void
     {
@@ -132,9 +134,7 @@ new #[Title('EET – nastavení')] class extends Component {
 
             $this->verificationResult = [
                 'success' => true,
-                'message' => $response->isTest
-                    ? 'Testovací prostředí EET zprávu přijalo.'
-                    : 'Produkční prostředí EET zprávu přijalo.',
+                'message' => Settings::current()->environment->label().' prostředí EET zprávu přijalo.',
                 'warnings' => $response->warnings,
             ];
         } catch (IncompleteSetup $exception) {
