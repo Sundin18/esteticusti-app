@@ -5,50 +5,50 @@ namespace App\Modules\Eet\Services;
 use Illuminate\Support\Str;
 
 /**
- * In-memory client for tests: answers from a queue and records what was sent.
+ * Klient v paměti pro testy: odpovídá z fronty a zaznamenává, co bylo odesláno.
  */
 class FakeEetClient implements EetClient
 {
     /**
-     * @var list<array{trzba: UdajeTrzby, prvniZaslani: bool, overeni: bool}>
+     * @var list<array{sale: SaleData, firstAttempt: bool, verifyOnly: bool}>
      */
-    public array $odeslane = [];
+    public array $sent = [];
 
     /**
-     * @var list<Odpoved|EetChyba|NeuplneNastaveni>
+     * @var list<EetResponse|EetException|IncompleteSetup>
      */
-    private array $fronta = [];
+    private array $queue = [];
 
     /**
-     * Queue the next answer; an exception is thrown instead of returned.
+     * Zařadí do fronty další odpověď; výjimka se místo vrácení vyhodí.
      */
-    public function odpovi(Odpoved|EetChyba|NeuplneNastaveni $odpoved): static
+    public function respondWith(EetResponse|EetException|IncompleteSetup $response): static
     {
-        $this->fronta[] = $odpoved;
+        $this->queue[] = $response;
 
         return $this;
     }
 
     /**
-     * Send a sale; with an empty queue it succeeds with a test POK, or without one in verification mode.
+     * Odešle tržbu; s prázdnou frontou uspěje s testovacím POK, v ověřovacím režimu bez něj.
      */
-    public function odesli(UdajeTrzby $trzba, bool $prvniZaslani = true, bool $overeni = false): Odpoved
+    public function send(SaleData $sale, bool $firstAttempt = true, bool $verifyOnly = false): EetResponse
     {
-        $this->odeslane[] = ['trzba' => $trzba, 'prvniZaslani' => $prvniZaslani, 'overeni' => $overeni];
+        $this->sent[] = ['sale' => $sale, 'firstAttempt' => $firstAttempt, 'verifyOnly' => $verifyOnly];
 
-        $odpoved = array_shift($this->fronta) ?? new Odpoved(
-            uuidZpravy: (string) Str::uuid(),
-            pok: $overeni ? null : Str::uuid().'-ff',
-            test: true,
-            varovani: [],
-            xmlPozadavku: '<Trzba/>',
-            xmlOdpovedi: '<Odpoved/>',
+        $response = array_shift($this->queue) ?? new EetResponse(
+            messageUuid: (string) Str::uuid(),
+            pok: $verifyOnly ? null : Str::uuid().'-ff',
+            isTest: true,
+            warnings: [],
+            requestXml: '<Trzba/>',
+            responseXml: '<Odpoved/>',
         );
 
-        if (! $odpoved instanceof Odpoved) {
-            throw $odpoved;
+        if (! $response instanceof EetResponse) {
+            throw $response;
         }
 
-        return $odpoved;
+        return $response;
     }
 }

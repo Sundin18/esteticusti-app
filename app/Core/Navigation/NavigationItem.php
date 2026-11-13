@@ -7,11 +7,11 @@ use Illuminate\Support\Facades\Route;
 final readonly class NavigationItem
 {
     /**
-     * @param  string  $label  Text shown in the sidebar.
-     * @param  string  $route  Name of the route the item links to.
-     * @param  string  $icon  Name of a Flux icon.
-     * @param  string|null  $ability  Gate ability required to see the item; null shows it to everyone.
-     * @param  list<string>|string|null  $activeRoutes  Route name patterns that mark the item as current; defaults to the item's route.
+     * @param  string  $label  Text zobrazený v sidebaru.
+     * @param  string  $route  Název routy, na kterou položka odkazuje.
+     * @param  string  $icon  Název ikony Flux.
+     * @param  string|null  $ability  Oprávnění potřebné k zobrazení položky; null ji zobrazí každému.
+     * @param  list<string>|string|null  $activeRoutes  Vzory názvů rout, při kterých je položka aktivní; výchozí je routa položky.
      */
     public function __construct(
         public string $label,

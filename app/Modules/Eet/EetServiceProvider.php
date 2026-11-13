@@ -15,7 +15,7 @@ use Livewire\Livewire;
 class EetServiceProvider extends ServiceProvider
 {
     /**
-     * Register the module's configuration and services.
+     * Zaregistruje konfiguraci a služby modulu.
      */
     public function register(): void
     {
@@ -25,7 +25,7 @@ class EetServiceProvider extends ServiceProvider
     }
 
     /**
-     * Bootstrap the EET module.
+     * Nastartuje modul EET.
      */
     public function boot(NavigationRegistry $navigation): void
     {
@@ -40,41 +40,41 @@ class EetServiceProvider extends ServiceProvider
     }
 
     /**
-     * Define the module's abilities: every signed-in user may view, only administrators may manage.
+     * Definuje oprávnění modulu: prohlížet smí každý přihlášený, spravovat jen správce.
      */
     protected function defineGates(): void
     {
         Gate::define('eet.view', fn (User $user): bool => true);
-        Gate::define('eet.manage', fn (User $user): bool => $user->hasRole(UserRole::Spravce));
+        Gate::define('eet.manage', fn (User $user): bool => $user->hasRole(UserRole::Admin));
     }
 
     protected function registerNavigation(NavigationRegistry $navigation): void
     {
         $navigation->add('EET', new NavigationItem(
             label: 'Přehled',
-            route: 'eet.prehled',
+            route: 'eet.overview',
             icon: 'banknotes',
             ability: 'eet.view',
         ));
 
         $navigation->add('EET', new NavigationItem(
             label: 'Nová tržba',
-            route: 'eet.trzby.nova',
+            route: 'eet.sales.create',
             icon: 'plus-circle',
             ability: 'eet.view',
         ));
 
         $navigation->add('EET', new NavigationItem(
             label: 'Tržby',
-            route: 'eet.trzby.seznam',
+            route: 'eet.sales.index',
             icon: 'list-bullet',
             ability: 'eet.view',
-            activeRoutes: ['eet.trzby.seznam', 'eet.trzby.detail'],
+            activeRoutes: ['eet.sales.index', 'eet.sales.show'],
         ));
 
         $navigation->add('EET', new NavigationItem(
             label: 'Nastavení',
-            route: 'eet.nastaveni',
+            route: 'eet.settings',
             icon: 'cog-6-tooth',
             ability: 'eet.manage',
         ));

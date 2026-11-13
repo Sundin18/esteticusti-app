@@ -24,20 +24,20 @@ class UserRolesTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $user->assignRole(UserRole::Recepce);
-        $user->assignRole(UserRole::Terapeut);
+        $user->assignRole(UserRole::Reception);
+        $user->assignRole(UserRole::Therapist);
 
-        $this->assertTrue($user->hasRole(UserRole::Recepce));
-        $this->assertTrue($user->hasRole(UserRole::Terapeut));
-        $this->assertFalse($user->hasRole(UserRole::Spravce));
+        $this->assertTrue($user->hasRole(UserRole::Reception));
+        $this->assertTrue($user->hasRole(UserRole::Therapist));
+        $this->assertFalse($user->hasRole(UserRole::Admin));
     }
 
     public function test_assigning_the_same_role_twice_keeps_a_single_assignment(): void
     {
         $user = User::factory()->create();
 
-        $user->assignRole(UserRole::Recepce);
-        $user->assignRole(UserRole::Recepce);
+        $user->assignRole(UserRole::Reception);
+        $user->assignRole(UserRole::Reception);
 
         $this->assertDatabaseCount('role_user', 1);
     }

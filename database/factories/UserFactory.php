@@ -19,7 +19,7 @@ class UserFactory extends Factory
     protected static ?string $password;
 
     /**
-     * Define the model's default state.
+     * Výchozí stav modelu.
      *
      * @return array<string, mixed>
      */
@@ -49,7 +49,7 @@ class UserFactory extends Factory
     }
 
     /**
-     * Indicate that the user has the given role; chain the call to assign several roles.
+     * Uživatel má zadanou roli; pro více rolí volání zřetězte.
      */
     public function withRole(UserRole $role): static
     {

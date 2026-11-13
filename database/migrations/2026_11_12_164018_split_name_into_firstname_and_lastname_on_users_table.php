@@ -9,9 +9,9 @@ use Illuminate\Support\Str;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Spustí migraci.
      *
-     * Existing names are split at the first space: the first word becomes the first name.
+     * Stávající jména se rozdělí na první mezeře: první slovo se stane křestním jménem.
      */
     public function up(): void
     {
@@ -35,7 +35,7 @@ return new class extends Migration
     }
 
     /**
-     * Reverse the migrations.
+     * Vrátí migraci zpět.
      */
     public function down(): void
     {

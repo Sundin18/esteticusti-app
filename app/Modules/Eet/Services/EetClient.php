@@ -5,13 +5,13 @@ namespace App\Modules\Eet\Services;
 interface EetClient
 {
     /**
-     * Send a sale to the EET service using the module's settings and active certificate.
+     * Odešle tržbu službě EET s nastavením modulu a aktivním certifikátem.
      *
-     * @param  bool  $prvniZaslani  False when the same sale is being sent again.
-     * @param  bool  $overeni  True sends the message in verification mode: it is checked but not registered and no POK is issued.
+     * @param  bool  $firstAttempt  False, když se stejná tržba posílá znovu.
+     * @param  bool  $verifyOnly  True odešle zprávu v ověřovacím režimu: zkontroluje se, ale neeviduje a POK se nevydá.
      *
-     * @throws EetChyba When the service rejects the message, cannot be reached or its confirmation cannot be trusted.
-     * @throws NeuplneNastaveni When the settings or the certificate are missing.
+     * @throws EetException Když služba zprávu odmítne, je nedostupná nebo jejímu potvrzení nelze věřit.
+     * @throws IncompleteSetup Když chybí nastavení nebo certifikát.
      */
-    public function odesli(UdajeTrzby $trzba, bool $prvniZaslani = true, bool $overeni = false): Odpoved;
+    public function send(SaleData $sale, bool $firstAttempt = true, bool $verifyOnly = false): EetResponse;
 }

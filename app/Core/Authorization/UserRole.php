@@ -4,19 +4,19 @@ namespace App\Core\Authorization;
 
 enum UserRole: string
 {
-    case Spravce = 'spravce';
-    case Recepce = 'recepce';
-    case Terapeut = 'terapeut';
+    case Admin = 'admin';
+    case Reception = 'reception';
+    case Therapist = 'therapist';
 
     /**
-     * Get the name shown to users.
+     * Vrátí název zobrazovaný uživatelům.
      */
     public function label(): string
     {
         return match ($this) {
-            self::Spravce => 'Správce',
-            self::Recepce => 'Recepce',
-            self::Terapeut => 'Terapeut',
+            self::Admin => 'Správce',
+            self::Reception => 'Recepce',
+            self::Therapist => 'Terapeut',
         };
     }
 }

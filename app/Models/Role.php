@@ -18,7 +18,7 @@ use Illuminate\Support\Carbon;
 class Role extends Model
 {
     /**
-     * Get the attributes that should be cast.
+     * Vrátí atributy, které se mají přetypovat.
      *
      * @return array<string, string>
      */

@@ -10,13 +10,13 @@ return [
     |--------------------------------------------------------------------------
     |
     | Adresa služby pro každé prostředí. Které prostředí se použije, určuje
-    | nastavení modulu v databázi (tabulka eet_nastaveni).
+    | nastavení modulu v databázi (tabulka eet_settings).
     |
     */
 
     'url' => [
         'test' => env('EET_URL_TEST', Client::PLAYGROUND),
-        'produkce' => env('EET_URL_PRODUKCE', Client::PRODUCTION),
+        'production' => env('EET_URL_PRODUCTION', Client::PRODUCTION),
     ],
 
 ];

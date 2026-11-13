@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * Spustí migraci.
      */
     public function up(): void
     {
@@ -32,7 +32,7 @@ return new class extends Migration
     }
 
     /**
-     * Reverse the migrations.
+     * Vrátí migraci zpět.
      */
     public function down(): void
     {

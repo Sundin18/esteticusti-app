@@ -34,15 +34,15 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Define the application's own abilities; modules define theirs in their providers.
+     * Definuje vlastní oprávnění aplikace; moduly definují svá ve svých providerech.
      */
     protected function defineGates(): void
     {
-        Gate::define('users.create', fn (User $user): bool => $user->hasRole(UserRole::Spravce));
+        Gate::define('users.create', fn (User $user): bool => $user->hasRole(UserRole::Admin));
     }
 
     /**
-     * Register the application's own sidebar items; modules add theirs in their providers.
+     * Zaregistruje vlastní položky aplikace v sidebaru; moduly přidávají své ve svých providerech.
      */
     protected function registerNavigation(NavigationRegistry $navigation): void
     {

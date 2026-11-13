@@ -41,7 +41,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
     /**
-     * Get the attributes that should be cast.
+     * Vrátí atributy, které se mají přetypovat.
      *
      * @return array<string, string>
      */
@@ -67,7 +67,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     }
 
     /**
-     * Give the user a role; assigning a role the user already has changes nothing.
+     * Přidělí uživateli roli; přidělení role, kterou už má, nic nezmění.
      */
     public function assignRole(UserRole $role): void
     {
@@ -76,7 +76,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     }
 
     /**
-     * Get the user's full name.
+     * Vrátí celé jméno uživatele.
      *
      * @return Attribute<string, never>
      */

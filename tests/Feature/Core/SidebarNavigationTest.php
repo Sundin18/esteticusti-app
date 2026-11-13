@@ -21,7 +21,7 @@ class SidebarNavigationTest extends TestCase
         $this->get(route('dashboard'))
             ->assertOk()
             ->assertSee('href="'.route('dashboard').'"', false)
-            ->assertSee('href="'.route('eet.prehled').'"', false);
+            ->assertSee('href="'.route('eet.overview').'"', false);
     }
 
     public function test_sidebar_hides_items_the_user_is_not_allowed_to_see(): void
@@ -37,7 +37,7 @@ class SidebarNavigationTest extends TestCase
     public function test_sidebar_shows_restricted_items_to_users_with_the_ability(): void
     {
         $this->registerAdminOnlyItem();
-        $this->actingAs(User::factory()->withRole(UserRole::Spravce)->create());
+        $this->actingAs(User::factory()->withRole(UserRole::Admin)->create());
 
         $this->get(route('dashboard'))
             ->assertOk()
@@ -56,7 +56,7 @@ class SidebarNavigationTest extends TestCase
 
     private function registerAdminOnlyItem(): void
     {
-        Gate::define('test.admin', fn (User $user): bool => $user->hasRole(UserRole::Spravce));
+        Gate::define('test.admin', fn (User $user): bool => $user->hasRole(UserRole::Admin));
 
         $this->app->make(NavigationRegistry::class)->add('Správa', new NavigationItem(
             label: 'Jen pro správce',

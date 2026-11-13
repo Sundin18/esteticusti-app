@@ -14,7 +14,7 @@ class NavigationRegistry
     private array $groups = [];
 
     /**
-     * Register a sidebar item under the given group heading.
+     * Zaregistruje položku sidebaru pod zadaný nadpis skupiny.
      */
     public function add(string $group, NavigationItem $item): static
     {
@@ -24,7 +24,7 @@ class NavigationRegistry
     }
 
     /**
-     * Get the groups and items the user is allowed to see, in registration order.
+     * Vrátí skupiny a položky, které uživatel smí vidět, v pořadí registrace.
      *
      * @return array<string, list<NavigationItem>>
      */

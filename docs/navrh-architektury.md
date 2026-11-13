@@ -23,18 +23,19 @@ app/Core/                    # sdílené: registr navigace, oprávnění
 
 Pravidla:
 
+- Názvy v kódu jsou anglicky: třídy, metody, proměnné, soubory, tabulky, sloupce, routy i hodnoty enumů. Česky jsou texty v uživatelském rozhraní a komentáře v kódu. Názvy atributů rozhraní EET (`eic_popl`, `porad_cis`…) se používají jen tam, kde se posílají službě.
 - Modul se zapíná jedním řádkem v `bootstrap/providers.php`; mimo svou složku nic neupravuje.
 - Sidebar (`resources/views/layouts/app/sidebar.blade.php`) se vykresluje z registru navigace v `app/Core`, do kterého si moduly registrují položky.
-- Moduly spolu mluví přes akce a události (např. `Eet\Actions\EvidujTrzbu`, událost `TrzbaPotvrzena`).
+- Moduly spolu mluví přes akce a události (např. `Eet\Actions\RecordSale`, událost `SaleConfirmed`).
 - Prefixy: tabulky `eet_*`, routy `/eet/*`, názvy rout `eet.*`.
-- Oprávnění: gate `eet.view` (každý přihlášený) a `eet.manage` (správce). Uživatel může mít více rolí současně (tabulky `roles` a `role_user`, enum `App\Core\Authorization\UserRole`: správce, recepce, terapeut); správcem je role `spravce`.
+- Oprávnění: gate `eet.view` (každý přihlášený) a `eet.manage` (správce). Uživatel může mít více rolí současně (tabulky `roles` a `role_user`, enum `App\Core\Authorization\UserRole`: `admin` = správce, `reception` = recepce, `therapist` = terapeut).
 
 ### Databáze
 
 Jedna společná databáze pro všechny moduly.
 
-- Tabulky mají prefix modulu; `users` (se sloupci `firstname` a `lastname`), `roles` a `role_user` jsou sdílené.
-- Cizí klíče napříč moduly jsou povolené (`eet_trzby.user_id` → `users.id`).
+- Tabulky mají prefix modulu; `users` (se sloupci `firstname` a `lastname`), `roles`, `role_user` a `customers` (klienti: `firstname`, `lastname`, `phone`, `email`; klient se nemaže, jen soft delete; základ budoucího modulu Klientská zóna) jsou sdílené.
+- Cizí klíče napříč moduly jsou povolené (`eet_sales.user_id` → `users.id`).
 - Modul zapisuje jen do vlastních tabulek; cizí data mění jen přes akce vlastníka.
 
 ### UI
@@ -88,22 +89,22 @@ Zdroje:
 
 | Tabulka | Obsah |
 |---|---|
-| `eet_nastaveni` | EIČ, název a adresa provozovny, `id_jednotky`, `id_pokl`, prostředí (test / produkce), mezní doba odezvy, čítač pořadových čísel |
-| `eet_certifikaty` | šifrovaný privátní klíč a certifikát (cast `encrypted`), platnost od–do, aktivní |
-| `eet_trzby` | `porad_cis`, `dat_trzby`, `celk_trzba`, stav, `pok`, `testovaci`, `user_id`, volitelně polymorfní zdroj, `storno_trzby_id` |
-| `eet_zpravy` | každý pokus: `trzba_id`, `uuid_zpravy`, `dat_odesl`, `prvni_zaslani`, XML požadavku a odpovědi, kód chyby, varování |
+| `eet_settings` | EIČ (`taxpayer_eic`), název a adresa provozovny, `unit_id`, `register_id`, prostředí (`test` / `production`), mezní doba odezvy, čítač pořadových čísel |
+| `eet_certificates` | šifrovaný privátní klíč a certifikát (cast `encrypted`), platnost od–do, aktivní |
+| `eet_sales` | `receipt_number`, `sold_at`, `total_amount`, `payment_method` (`cash` / `card`), volitelně `customer_id`, `status`, `pok`, `is_test`, `user_id`, volitelně polymorfní `source`, `cancelled_sale_id` |
+| `eet_messages` | každý pokus: `sale_id`, `message_uuid`, `sent_at`, `is_first_attempt`, XML požadavku a odpovědi, kód chyby, varování |
 
-Unikátní index na `eet_trzby.porad_cis`. Částky jako `decimal(10,2)`.
+Unikátní index na `eet_sales.receipt_number`. Částky jako `decimal(10,2)`.
 
 ### Stavy tržby
 
-`ceka` → `potvrzena` (má POK) / `k_opakovani` (timeout, kód -1) / `zamitnuta` (kódy 2–8, nutný zásah)
+`pending` → `confirmed` (má POK) / `awaiting_retry` (timeout, kód -1) / `rejected` (kódy 2–8, nutný zásah)
 
 ### Průběh odeslání
 
-1. `EvidujTrzbu` v DB transakci se zámkem (`lockForUpdate` na `eet_nastaveni`) přidělí pořadové číslo a uloží tržbu.
+1. `RecordSale` v DB transakci se zámkem (`lockForUpdate` na `eet_settings`) přidělí pořadové číslo a uloží tržbu.
 2. Synchronní pokus s nastaveným timeoutem; uživatel vidí POK.
-3. Timeout nebo kód -1 → job `OdesliTrzbu` ve frontě s rostoucím odstupem (1, 5, 15, 30 min, pak po hodině) po dobu 48 h. Jeden pokus o odeslání dělá akce `PosliTrzbu`, kterou používá i „Odeslat znovu“.
+3. Timeout nebo kód -1 → job `ResendSale` ve frontě s rostoucím odstupem (1, 5, 15, 30 min, pak po hodině) po dobu 48 h. Jeden pokus o odeslání dělá akce `SendSale`, kterou používá i „Odeslat znovu“.
 4. Plánovaná úloha upozorní na tržby bez POK starší 24 h a na certifikát před vypršením.
 
 ### Vrstvy
@@ -111,16 +112,16 @@ Unikátní index na `eet_trzby.porad_cis`. Částky jako `decimal(10,2)`.
 - `EetClient` (rozhraní): `SoapEetClient`, `FakeEetClient` pro testy.
 - Sestavení a podpis zprávy (WS-Security) i ověření podpisu odpovědi dělá knihovna `jakubsilny/eet2` (připnutá verze 1.0.0), schovaná za `SoapEetClient`. Používají se její `buildSignedMessage()`, `parseResponse()` a `verifyResponseSignature()`, ne `send()`.
 - PHP `SoapClient` se nepoužívá (neumí WS-Security); HTTP přes Laravel `Http`, takže zůstává XML požadavku i odpovědi a testy jdou přes `Http::fake`.
-- O opakování rozhoduje `EetChyba::jeDocasna()` (kód `-1` a neověřitelný podpis odpovědi), ne `isRetryable()` knihovny; kód `8` je trvalá chyba.
-- Adresy prostředí jsou v `config/eet.php` modulu (výchozí z knihovny, přepsatelné přes `EET_URL_TEST` a `EET_URL_PRODUKCE`).
+- O opakování rozhoduje `EetException::isTemporary()` (kód `-1` a neověřitelný podpis odpovědi), ne `isRetryable()` knihovny; kód `8` je trvalá chyba.
+- Adresy prostředí jsou v `config/eet.php` modulu (výchozí z knihovny, přepsatelné přes `EET_URL_TEST` a `EET_URL_PRODUCTION`).
 - Účtenka: `barryvdh/laravel-dompdf`; obsah: provozovna, EIČ, pořadové číslo, datum a čas, částka, POK.
 
 ### Obrazovky (Livewire + Flux Pro)
 
 - **Přehled** `/eet`: dnešní tržby, nepotvrzené, stav spojení, platnost certifikátu.
-- **Nová tržba** `/eet/trzby/nova`: částka, potvrzení s POK, tlačítko Účtenka.
-- **Tržby** `/eet/trzby`: seznam s filtry, detail s historií pokusů, „Odeslat znovu“, Účtenka, Storno.
-- **Nastavení** `/eet/nastaveni` (jen správce): údaje poplatníka, certifikát, test spojení (`overeni="true"`).
+- **Nová tržba** `/eet/sales/new`: částka, potvrzení s POK, tlačítko Účtenka.
+- **Tržby** `/eet/sales`: seznam s filtry, detail s historií pokusů, „Odeslat znovu“, Účtenka, Storno.
+- **Nastavení** `/eet/settings` (jen správce): údaje poplatníka, certifikát, test spojení (`overeni="true"`).
 
 ### Otevřené body
 

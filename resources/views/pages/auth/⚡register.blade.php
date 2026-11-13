@@ -20,7 +20,7 @@ new #[Title('Register')] class extends Component {
     public array $roles = [];
 
     /**
-     * Create a new user with the selected roles; the administrator stays signed in.
+     * Vytvoří nového uživatele s vybranými rolemi; správce zůstane přihlášený.
      */
     public function register(CreateNewUser $createNewUser): void
     {
