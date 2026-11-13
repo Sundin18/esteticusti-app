@@ -125,7 +125,11 @@ new #[Title('EET – nová tržba')] class extends Component {
         @endif
 
         <form wire:submit="record" class="space-y-6">
-            <flux:input wire:model="amount" label="Částka (Kč)" inputmode="decimal" placeholder="0,00" required autofocus autocomplete="off" />
+            <flux:field>
+                <flux:label>Částka (Kč)</flux:label>
+                <flux:input wire:model="amount" inputmode="decimal" placeholder="0,00" autofocus autocomplete="off" />
+                <flux:error name="amount" />
+            </flux:field>
 
             <flux:radio.group wire:model="paymentMethod" label="Způsob platby" variant="segmented">
                 @foreach (PaymentMethod::cases() as $option)
